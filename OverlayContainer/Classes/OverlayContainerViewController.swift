@@ -109,13 +109,15 @@ public class OverlayContainerViewController: UIViewController {
 
     public override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        guard needsOverlayContainerHeightUpdate else { return }
-        needsOverlayContainerHeightUpdate = true
+        guard needsOverlayContainerHeightUpdate || previousSize != view.bounds.size else { return }
+        self.previousSize = view.bounds.size
+        needsOverlayContainerHeightUpdate = false
         updateOverlayConstraints(forNew: view.bounds.size)
     }
 
     public override func viewWillTransition(to size: CGSize,
                                             with coordinator: UIViewControllerTransitionCoordinator) {
+        self.previousSize = size
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate(alongsideTransition: { _ in
             self.updateOverlayConstraints(forNew: size)
@@ -132,6 +134,14 @@ public class OverlayContainerViewController: UIViewController {
     public func moveOverlay(toNotchAt index: Int, animated: Bool) {
         view.layoutIfNeeded()
         translationController?.moveOverlay(toNotchAt: index, velocity: .zero, animated: animated)
+    }
+
+    /// Invalidates the current overlay notch heights.
+    ///
+    /// This method does not reload the notch heights immediately. It only clears its current state.
+    /// Call `moveOverlay(toNotchAt:animated)` or `view.layoutIfNeeded` to perform the change immediately.
+    public func invalidateNotchHeights() {
+        needsOverlayContainerHeightUpdate = true
     }
 
     // MARK: - Private
@@ -155,10 +165,9 @@ public class OverlayContainerViewController: UIViewController {
     }
 
     private func updateOverlayConstraints(forNew size: CGSize) {
-        guard let controller = translationController, previousSize != size else {
+        guard let controller = translationController else {
             return
         }
-        previousSize = size
         configuration.reloadNotchHeights()
         switch style {
         case .flexibleHeight:
