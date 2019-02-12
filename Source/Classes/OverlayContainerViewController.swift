@@ -134,6 +134,12 @@ public class OverlayContainerViewController: UIViewController {
         translationController?.moveOverlay(toNotchAt: index, velocity: .zero, animated: animated)
     }
 
+    /// Forces controller to reload notches info by asking it's delegate
+    /// Does not automatically move overlay
+    public func reloadNotchHeights() {
+        configuration.reloadNotchHeights()
+    }
+
     // MARK: - Private
 
     private func loadTranslationViews() {
