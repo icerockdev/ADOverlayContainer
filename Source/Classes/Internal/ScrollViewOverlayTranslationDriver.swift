@@ -40,7 +40,8 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
             let offset = adjustedContentOffset(dragging: scrollView)
             lastContentOffsetWhileScrolling = offset
             scrollView.contentOffset = offset // Warning : calls `overlayScrollViewDidScroll(_:)` again
-            controller.dragOverlay(withOffset: overlayTranslation, usesFunction: false)
+            let useFunction = self.scrollViewTranslation > 0
+            controller.dragOverlay(withOffset: overlayTranslation, usesFunction: useFunction)
         } else {
             lastContentOffsetWhileScrolling = scrollView.contentOffset
         }
@@ -86,7 +87,8 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
         let movesUp = velocity < 0
         switch controller.translationPosition {
         case .bottom:
-            return !scrollView.isContentOriginInBounds && scrollView.scrollsUp
+            return (!scrollView.isContentOriginInBounds && scrollView.scrollsUp)
+                || (scrollView.isContentOriginInBounds && scrollView.panGestureRecognizer.yDirection == .down)
         case .top:
             return scrollView.isContentOriginInBounds && !movesUp
         case .inFlight:
@@ -107,7 +109,7 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
                 contentOffset.y = topInset
             }
         case .bottom:
-            break
+            contentOffset.y = scrollViewTranslation
         }
         // (gz) 2018-11-26 Between two `overlayScrollViewDidScroll:` calls,
         // the scrollView exceeds the top's contentInset. We adjust the target.

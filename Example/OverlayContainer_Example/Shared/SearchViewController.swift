@@ -51,6 +51,7 @@ class SearchViewController: UIViewController, UITableViewDataSource, UITableView
         } else {
             header.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor).isActive = true
         }
+        tableView.alwaysBounceVertical = false
         tableView.dataSource = self
         tableView.pinToSuperview(edges: [.left, .right, .bottom])
         tableView.topAnchor.constraint(equalTo: header.bottomAnchor).isActive = true
