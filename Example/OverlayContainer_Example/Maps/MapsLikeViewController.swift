@@ -66,7 +66,7 @@ class MapsLikeViewController: UIViewController {
         case .maximum:
             return availableSpace * 3 / 4
         case .minimum:
-            return availableSpace * 1 / 4
+            return availableSpace * 2 / 4
         }
     }
 }
@@ -89,16 +89,5 @@ extension MapsLikeViewController: OverlayContainerViewControllerDelegate {
     func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
                                         scrollViewDrivingOverlay overlayViewController: UIViewController) -> UIScrollView? {
         return (overlayViewController as? SearchViewController)?.tableView
-    }
-
-    func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                        shouldStartDraggingOverlay overlayViewController: UIViewController,
-                                        at point: CGPoint,
-                                        in coordinateSpace: UICoordinateSpace) -> Bool {
-        guard let header = (overlayViewController as? SearchViewController)?.header else {
-            return false
-        }
-        let convertedPoint = coordinateSpace.convert(point, to: header)
-        return header.bounds.contains(convertedPoint)
     }
 }
