@@ -1,3 +1,11 @@
+## 1.1.1 (27 February 2019)
+
+- Fix the cleaning of the translation drivers when a new driving scroll view is set.
+
+## 1.1.0 (25 February 2019)
+
+- Add ability to invalidate the current height of the overlay notches
+
 ## 1.0.4 (30 January 2019)
 
 - Add Carthage support

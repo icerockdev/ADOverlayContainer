@@ -22,12 +22,15 @@ ___
   - [Overlay style](#overlay-style)
   - [Scroll view support](#scroll-view-support)
   - [Pan gesture support](#pan-gesture-support)
+  - [Tracking the overlay](#tracking-the-overlay)
   - [Examples](#examples)
 - [Advanced Usage](#advanced-usage)
+  - [Multiple overlays](#multiple-overlays)
   - [Backdrop view](#backdrop-usage)
   - [Safe Area](#safe-area)
   - [Custom Translation](#custom-translation)
   - [Custom Translation Animations](#custom-translation-animations)
+  - [Reloading the notches](#reloading-the-notches)
 - [Author](#author)
 - [License](#license)
 
@@ -216,6 +219,46 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 }
 ```
 
+### Tracking the overlay
+
+You can track the overlay motions using the dedicated delegate methods.
+
+`didDragOverlay` is called each time the overlay is dragged by the user to the specified height.
+
+```swift
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    didDragOverlay overlayViewController: UIViewController,
+                                    toHeight height: CGFloat,
+                                    availableSpace: CGFloat)
+```
+
+`didEndDraggingOverlay` is called when the user has finished dragging the overlay. The container is about to move the overlay to the specified notch.
+
+```swift
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    didEndDraggingOverlay overlayViewController: UIViewController,
+                                    transitionCoordinator: OverlayContainerTransitionCoordinator)
+```
+
+The `transition coordinator` provides information about the animation that is about to start:
+
+```swift
+/// The notch's index the container expects to reach.
+var targetNotchIndex: Int { get }
+
+/// The notch's height the container expects to reach.
+var targetNotchHeight: CGFloat { get }
+
+/// The current translation height.
+var overlayTranslationHeight: CGFloat { get }
+
+/// The notch indexes.
+var notchIndexes: Range<Int> { get }
+
+/// Returns the height of the specified notch.
+func height(forNotchAt index: Int) -> CGFloat
+```
+
 ### Examples
 
 To test the examples, open `OverlayContainer.xcworkspace` and run the `OverlayContainer_Example` target.
@@ -226,11 +269,36 @@ Choose the layout you wish to display in the `AppDelegate` :
 
 ![Maps](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/maps.gif)
 
-* ShortcutsLikeViewController: A custom layout which adapts its hierachy on trait collection changes : Moving from a `UISplitViewController` on regular environment to a simple `StackViewController` on compact environment. Visualize it on iPad Pro.
+* ShortcutsLikeViewController: A custom layout which adapts its hierachy on trait collection changes : Moving from a `UISplitViewController` on regular environment to a simple `StackViewController` on compact environment. Visualize it on an iPad Pro.
 
 ![Shortcuts](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/shortcuts.gif)
 
 ## Advanced usage
+
+### Multiple overlays
+
+`OverlayContainer` does not provide a built-in view controller navigation management. It focuses its effort on the overlay translation.
+
+However in the project, there is an example of a basic solution to overlay multiple overlays on top of each other, like in the `Apple Maps` app. It is based on an `UINavigationController` and a custom implementation of its delegate:
+
+```swift
+// MARK: - UINavigationControllerDelegate
+
+func navigationController(_ navigationController: UINavigationController,
+                          animationControllerFor operation: UINavigationController.Operation,
+                          from fromVC: UIViewController,
+                          to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    return OverlayNavigationAnimationController(operation: operation)
+}
+
+func navigationController(_ navigationController: UINavigationController,
+                          didShow viewController: UIViewController,
+                          animated: Bool) {
+    overlayController.drivingScrollView = (viewController as? SearchViewController)?.tableView
+}
+```
+
+`OverlayNavigationAnimationController` tweaks the native behavior of the `UINavigationController`: it slides the pushed view controllers up from the bottom of the screen. Feel free to add shadows and modify the animation curve depending on your needs. The only restriction is that you can not push an `UINavigationController` inside another `UINavigationController`.
 
 ### Backdrop view
 
@@ -320,6 +388,16 @@ func animationController(for overlayViewController: UIViewController) -> Overlay
     return controller
 }
 ```
+
+### Reloading the notches
+
+You can reload all the data that is used to construct the notches using the dedicated method:
+
+```swift
+func invalidateNotchHeights()
+```
+
+This method does not reload the notch heights immediately. It only clears the current container's state. Call `moveOverlay(toNotchAt:animated:)` to perform the change immediately or to move the overlay to a correct notch if the number of notches has changed.
 
 ## Author
 
