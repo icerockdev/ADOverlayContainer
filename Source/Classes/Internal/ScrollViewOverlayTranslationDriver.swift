@@ -103,25 +103,20 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
     }
 
     private func adjustedContentOffset(dragging scrollView: UIScrollView) -> CGPoint {
-        guard let controller = translationController else { return .zero }
         var contentOffset = lastContentOffsetWhileScrolling
         let topInset = -scrollView.contentInset.top
-        switch controller.translationPosition {
-        case .inFlight, .top:
-            // (gz) 2018-11-26 The user raised its finger in the top or in flight positions while scrolling bottom.
-            // If the scroll's animation did not finish when the user translates the overlay,
-            // the content offset may have exceeded the top inset. We adjust it.
-            if contentOffset.y < topInset {
-                contentOffset.y = topInset
-            }
-        case .bottom:
-            contentOffset.y = scrollViewTranslation
+
+        // Scroll should not bounce without overlay. Adjust if it tries
+        if contentOffset.y < topInset {
+            contentOffset.y = topInset
         }
+
         // (gz) 2018-11-26 Between two `overlayScrollViewDidScroll:` calls,
         // the scrollView exceeds the top's contentInset. We adjust the target.
         if (contentOffset.y - topInset) * (scrollView.contentOffset.y - topInset) < 0 {
             contentOffset.y = topInset
         }
+        
         return contentOffset
     }
 }
