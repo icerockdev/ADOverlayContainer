@@ -17,6 +17,10 @@ extension UIScrollView {
         return contentOffset.y <= -contentInset.top
     }
 
+    var isContentInBounds: Bool {
+        return contentSize.height <= bounds.height
+    }
+
     func scrollToTop() {
         contentOffset.y = -contentInset.top
     }

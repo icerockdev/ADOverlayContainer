@@ -46,7 +46,7 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
             let offset = adjustedContentOffset(dragging: scrollView)
             lastContentOffsetWhileScrolling = offset
             scrollView.contentOffset = offset // Warning : calls `overlayScrollViewDidScroll(_:)` again
-            let useFunction = self.scrollViewTranslation > 0
+            let useFunction = self.scrollViewTranslation > 0 || scrollView.isContentInBounds
             controller.dragOverlay(withOffset: overlayTranslation, usesFunction: useFunction)
         } else {
             lastContentOffsetWhileScrolling = scrollView.contentOffset
@@ -96,7 +96,8 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
             return (!scrollView.isContentOriginInBounds && scrollView.scrollsUp)
                 || (scrollView.isContentOriginInBounds && scrollView.panGestureRecognizer.yDirection == .down)
         case .top:
-            return scrollView.isContentOriginInBounds && !movesUp
+            return (scrollView.isContentOriginInBounds && !movesUp)
+                || (movesUp && scrollView.isContentInBounds)
         case .inFlight:
             return scrollView.isContentOriginInBounds || scrollView.scrollsUp
         }
