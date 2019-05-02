@@ -71,7 +71,7 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
             targetContentOffset.pointee.y = -scrollView.contentInset.top
         case .inFlight where !controller.overlayHasReachedANotch():
             targetContentOffset.pointee.y = lastContentOffsetWhileScrolling.y
-        case .top, .bottom, .inFlight:
+        case .top, .bottom, .inFlight, .stationary:
             break
         }
         // If the overlay is in flight and the user scrolls bottom, we ignore the velocity and we do not
@@ -100,6 +100,8 @@ class ScrollViewOverlayTranslationDriver: OverlayTranslationDriver, OverlayScrol
                 || (movesUp && scrollView.isContentInBounds)
         case .inFlight:
             return scrollView.isContentOriginInBounds || scrollView.scrollsUp
+        case .stationary:
+            return false
         }
     }
 

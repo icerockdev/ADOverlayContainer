@@ -1,18 +1,52 @@
-# OverlayContainer
+<p align="center">
+<img src="https://github.com/applidium/ADOverlayContainer/blob/master/Assets/icon.png" width="700">
+</p>
 
-[![Version](https://img.shields.io/cocoapods/v/OverlayContainer.svg?style=flat)](https://cocoapods.org/pods/OverlayContainer)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![License](https://img.shields.io/cocoapods/l/OverlayContainer.svg?style=flat)](https://cocoapods.org/pods/OverlayContainer)
-[![Platform](https://img.shields.io/cocoapods/p/OverlayContainer.svg?style=flat)](https://cocoapods.org/pods/OverlayContainer)
-[![Build Status](https://api.travis-ci.org/applidium/ADOverlayContainer.svg?branch=master)](https://travis-ci.org/applidium/ADOverlayContainer)
+<H4 align="center">
+  OverlayContainer is a UI library written in Swift. It makes it easier to develop overlay based interfaces, such as the one presented in the Apple Maps, Stocks or Shortcuts apps
+</H4>
 
-OverlayContainer is a UI library written in Swift. It makes it easier to develop overlay based interfaces, such as the one presented in the Apple Maps, Stocks or Shortcuts apps.
+<p align="center">
+  <a href="https://developer.apple.com/"><img alt="Platform" src="https://img.shields.io/badge/platform-iOS-green.svg"/></a>
+  <a href="https://developer.apple.com/swift"><img alt="Swift4" src="https://img.shields.io/badge/language-Swift%204.2-orange.svg"/></a>
+  <a href="https://cocoapods.org/pods/OverlayContainer"><img alt="CocoaPods" src="https://img.shields.io/cocoapods/v/OverlayContainer.svg?style=flat"/></a>
+  <a href="https://github.com/Carthage/Carthage"><img alt="Carthage" src="https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat"/></a>
+  <a href="https://travis-ci.org/applidium/ADOverlayContainer"><img alt="Build Status" src="https://api.travis-ci.org/applidium/ADOverlayContainer.svg?branch=master"/></a>
+  <a href="https://github.com/applidium/ADOverlayContainer/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/cocoapods/l/OverlayContainer.svg?style=flat"/></a>
+</p>
 
-![scroll](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/scroll.gif)
+---
 
-___
+## Features
 
-- [Features](#features)
+There are alternatives like:
+
+- [Pulley](https://github.com/52inc/Pulley)
+- [FloatingPanel](https://github.com/SCENEE/FloatingPanel)
+
+`OverlayContainer` uses a different approach:
+
+- It tries to be as lightweight and non-intrusive as possible. The layout and the UI customization are done by you to avoid to corrupt your project.
+- It perfectly mimics the overlay presented in the Siri Shotcuts app. See [this article](https://gaetanzanella.github.io//2018/replicate-apple-maps-overlay/) for details.
+- It provides more features:
+
+- [x] Unlimited notches 
+- [x] Notches modifiable at runtime
+- [x] Adaptive to any custom layouts
+- [x] Rubber band effect
+- [x] Animations and target notch policy fully customizable
+- [x] Unit tested
+
+See the provided examples for help or feel free to ask directly.
+
+---
+
+<p align="center">
+<img src="https://github.com/applidium/ADOverlayContainer/blob/master/Assets/scroll.gif" width="222">
+</p>
+
+---
+
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [CocoaPods](#cocoapods)
@@ -26,6 +60,7 @@ ___
   - [Examples](#examples)
 - [Advanced Usage](#advanced-usage)
   - [Multiple overlays](#multiple-overlays)
+  - [Showing & Hiding the overlay](#show-&-hide-the-overlay)
   - [Backdrop view](#backdrop-usage)
   - [Safe Area](#safe-area)
   - [Custom Translation](#custom-translation)
@@ -34,23 +69,6 @@ ___
 - [Author](#author)
 - [License](#license)
 
-## Features
-
-There are currently several alternatives like :
-
-- [Pulley](https://github.com/52inc/Pulley)
-- [FloatingPanel](https://github.com/SCENEE/FloatingPanel)
-
-`OverlayContainer` uses a different approach. It tries to be as lightweight and non-intrusive as possible. The layout and the UI customization are done by you to avoid to corrupt your project. `OverlayContainer` adapts to it. See the provided examples for help or feel free to ask directly.
-
-The library focuses its effort on the hard part, the overlay translation. It perfectly mimics the overlay presented in the Siri Shotcuts app.
-
-- [x] Unlimited notches
-- [x] Adaptive to any custom layouts
-- [x] Fluid transitions between scroll & translation
-- [x] Rubber band effect
-- [x] Animations and target notch policy fully customizable
-- [x] Unit tested
 
 ## Requirements
 
@@ -78,33 +96,11 @@ github "https://github.com/applidium/ADOverlayContainer"
 
 ### Setup
 
-The main component of the library is the `OverlayContainerViewController`. It defines an area where a view controller can be dragged up and down, hidding or revealing the content underneath it. 
+The main component of the library is the `OverlayContainerViewController`. It defines an area where a view controller, called the overlay view controller, can be dragged up and down, hiding or revealing the content underneath it.
 
-Thus, your first step is to create a custom view controller container which combines the `OverlayContainerViewController` and the content you wish to overlay.
-It could be as simple as a view controller stacking all its children :
+`OverlayContainer` uses the last view controller of its `viewControllers` as the overlay view controller. It stacks the other view controllers on top of each other, if any, and adds them underneath the overlay view controller.
 
-```swift
-class StackViewController: UIViewController {
-
-    var viewControllers: [UIViewController] = [] {
-        didSet {
-            guard isViewLoaded else { return }
-            loadChildren()
-        }
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        loadChildren()
-    }
-
-    private func loadChildren() {
-        viewControllers.forEach { addChild($0, in: view) }
-    }
-}
-```
-
-A startup sequence might look like this :
+A startup sequence might look like this:
 
 ```swift
 let mapsController = MapsViewController()
@@ -112,20 +108,17 @@ let searchController = SearchViewController()
 
 let containerController = OverlayContainerViewController()
 containerController.delegate = self
-containerController.viewControllers = [searchController]
-
-let stackController = StackViewController()
-stackController.viewControllers = [
+containerController.viewControllers = [
     mapsController,
-    containerController
+    searchController
 ]
-window?.rootViewController = stackController
 
+window?.rootViewController = containerController
 ```
 
-The last step is to define the overlay's notches. By default, the overlay container view controller does not display anything. 
-Implement `OverlayContainerViewControllerDelegate` to specify the number of notches wished :
+Specifing only one view controller is absolutely valid. For instance, in [MapsLikeViewController](https://github.com/applidium/ADOverlayContainer/blob/master/Example/OverlayContainer_Example/Maps/MapsLikeViewController.swift) the overlay only covers partially its content.
 
+The overlay container view controller needs at least one notch. Implement `OverlayContainerViewControllerDelegate` to specify the number of notches wished:
 
 ```swift
 enum OverlayNotch: Int, CaseIterable {
@@ -152,7 +145,7 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 
 ### Overlay style
 
-The overlay style defines how the overlay view controllers will be constrained in the `OverlayContainerViewController`.
+The overlay style defines how the overlay view controller will be constrained in the `OverlayContainerViewController`.
 
 ```swift
 enum OverlayStyle {
@@ -185,7 +178,7 @@ The container view controller can coordinate the scrolling of a scroll view with
 
 ![scrollToTranslation](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/scrollToTranslation.gif)
 
-Use the associated delegate method :
+Use the dedicated delegate method:
 
 ```swift
 func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
@@ -194,7 +187,7 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 }
 ```
 
-Or directly set the dedicated property :
+Or directly set the dedicated property:
 
 ```swift
 let containerController = OverlayContainerViewController()
@@ -255,6 +248,9 @@ var overlayTranslationHeight: CGFloat { get }
 /// The notch indexes.
 var notchIndexes: Range<Int> { get }
 
+/// The reachables indexes.
+var reachableIndexes: [Int] { get }
+
 /// Returns the height of the specified notch.
 func height(forNotchAt index: Int) -> CGFloat
 ```
@@ -263,13 +259,13 @@ func height(forNotchAt index: Int) -> CGFloat
 
 To test the examples, open `OverlayContainer.xcworkspace` and run the `OverlayContainer_Example` target.
 
-Choose the layout you wish to display in the `AppDelegate` :
+Choose the layout you wish to display in the `AppDelegate`:
 
 * MapsLikeViewController: A custom layout which adapts its hierachy on rotations.
 
 ![Maps](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/maps.gif)
 
-* ShortcutsLikeViewController: A custom layout which adapts its hierachy on trait collection changes : Moving from a `UISplitViewController` on regular environment to a simple `StackViewController` on compact environment. Visualize it on an iPad Pro.
+* ShortcutsLikeViewController: A custom layout which adapts its hierachy on trait collection changes: Moving from a `UISplitViewController` on regular environment to a simple `StackViewController` on compact environment. Visualize it on an iPad Pro.
 
 ![Shortcuts](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/shortcuts.gif)
 
@@ -300,6 +296,51 @@ func navigationController(_ navigationController: UINavigationController,
 
 `OverlayNavigationAnimationController` tweaks the native behavior of the `UINavigationController`: it slides the pushed view controllers up from the bottom of the screen. Feel free to add shadows and modify the animation curve depending on your needs. The only restriction is that you can not push an `UINavigationController` inside another `UINavigationController`.
 
+### Showing & Hiding the overlay
+
+`OverlayContainer` provides a easy way to enable & disable notches on the fly. A frequent use case is to show & hide the overlay. `ShowOverlayExampleViewController` provides a basic implementation of it:
+
+```swift
+var showsOverlay = false
+
+func showOrHideOverlay() {
+    showsOverlay.toggle()
+    let targetNotch: Notch = showsOverlay ? .med : .hidden
+    overlayContainerController.moveOverlay(toNotchAt: targetNotch.rawValue, animated: true)
+}
+
+// MARK: - OverlayContainerViewControllerDelegate
+
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    heightForNotchAt index: Int,
+                                    availableSpace: CGFloat) -> CGFloat {
+    switch Notch.allCases[index] {
+    case .max:
+        return ...
+    case .med:
+        return ...
+    case .hidden:
+        return 0
+    }
+}
+
+
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    canReachNotchAt index: Int,
+                                    forOverlay overlayViewController: UIViewController) -> Bool {
+    switch Notch.allCases[index] {
+    case .max:
+        return showsOverlay
+    case .med:
+        return showsOverlay
+    case .hidden:
+        return !showsOverlay
+    }
+}
+```
+
+Make sure to use the `rigid` overlay style if the content can not be flattened.
+
 ### Backdrop view
 
 Coordinate the overlay movements to the aspect of a view using the dedicated delegate methods. See the [backdrop view example](https://github.com/applidium/ADOverlayContainer/blob/master/Example/OverlayContainer/BackdropExampleViewController.swift).
@@ -328,7 +369,7 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 
 Be careful when using safe areas. As described in the [WWDC "UIKit: Apps for Every Size and Shape" video](https://masterer.apple.com/videos/play/wwdc2018-235/?time=328), the safe area insets will not be updated if your views exceeds the screen bounds. This is specially the case when using the `OverlayStyle.flexibleHeight`.
 
-The simpliest way to handle the safe area correctly is to compute your notch heights using the `safeAreaInsets` provided by the container and avoid the `safeAreaLayoutGuide` bottom anchor in your overlay :
+The simpliest way to handle the safe area correctly is to compute your notch heights using the `safeAreaInsets` provided by the container and avoid the `safeAreaLayoutGuide` bottom anchor in your overlay:
 
 ```swift
 func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,

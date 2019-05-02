@@ -62,6 +62,7 @@ public class OverlayContainerViewController: UIViewController {
     private lazy var overlayPanGesture: OverlayTranslationGestureRecognizer = self.makePanGesture()
     private lazy var overlayContainerView = OverlayContainerView()
     private lazy var overlayTranslationView = OverlayTranslationView()
+    private lazy var groundView = GroundView()
     private var overlayContainerViewStyleConstraint: NSLayoutConstraint?
     private var translationHeightConstraint: NSLayoutConstraint?
 
@@ -74,7 +75,7 @@ public class OverlayContainerViewController: UIViewController {
     }
 
     private var previousSize: CGSize = .zero
-    private var translationController: HeightContrainstOverlayTranslationController?
+    private var translationController: HeightConstraintOverlayTranslationController?
     private var translationDrivers: [OverlayTranslationDriver] = []
 
     private var overlayContainerConstraintsAreActive: Bool {
@@ -136,11 +137,11 @@ public class OverlayContainerViewController: UIViewController {
     /// - parameter index: The index of the target notch.
     /// - parameter animated: Defines either the transition should be animated or not.
     ///
-    public func moveOverlay(toNotchAt index: Int, animated: Bool) {
+    public func moveOverlay(toNotchAt index: Int, animated: Bool, completion: (() -> Void)? = nil) {
         if !overlayContainerConstraintsAreActive {
             view.layoutIfNeeded()
         }
-        translationController?.moveOverlay(toNotchAt: index, velocity: .zero, animated: animated)
+        translationController?.moveOverlay(toNotchAt: index, velocity: .zero, animated: animated, completion: completion)
     }
 
     /// Invalidates the current container's notches.
@@ -157,6 +158,8 @@ public class OverlayContainerViewController: UIViewController {
     // MARK: - Private
 
     private func loadTranslationViews() {
+        view.addSubview(groundView)
+        groundView.pinToSuperview()
         view.addSubview(overlayTranslationView)
         overlayTranslationView.addSubview(overlayContainerView)
         overlayTranslationView.pinToSuperview(edges: [.bottom, .left, .right])
@@ -191,7 +194,11 @@ public class OverlayContainerViewController: UIViewController {
     }
 
     private func loadOverlayViews() {
-        viewControllers.forEach { addChild($0, in: overlayContainerView) }
+        guard !viewControllers.isEmpty else { return }
+        groundView.isHidden = viewControllers.count == 1
+        var truncatedViewControllers = viewControllers
+        truncatedViewControllers.popLast().flatMap { addChild($0, in: overlayContainerView) }
+        truncatedViewControllers.forEach { addChild($0, in: groundView) }
         loadTranslationController()
         loadTranslationDrivers()
     }
@@ -201,7 +208,7 @@ public class OverlayContainerViewController: UIViewController {
             let overlayController = topViewController else {
                 return
         }
-        translationController = HeightContrainstOverlayTranslationController(
+        translationController = HeightConstraintOverlayTranslationController(
             translationHeightConstraint: translationHeightConstraint,
             overlayViewController: overlayController,
             configuration: configuration

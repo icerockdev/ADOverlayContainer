@@ -54,7 +54,7 @@ class SearchViewController: UIViewController,
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 100
+        return 7
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -83,7 +83,7 @@ class SearchViewController: UIViewController,
             header.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor).isActive = true
         }
         header.showsCloseAction = showsCloseAction
-        tableView.alwaysBounceVertical = false
+        tableView.alwaysBounceVertical = true
         tableView.dataSource = self
         tableView.pinToSuperview(edges: [.left, .right, .bottom])
         tableView.topAnchor.constraint(equalTo: header.bottomAnchor).isActive = true
