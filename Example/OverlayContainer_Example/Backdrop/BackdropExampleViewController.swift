@@ -48,21 +48,6 @@ class BackdropExampleViewController: UIViewController {
             return availableSpace * 1 / 4
         }
     }
-
-    private func alpha(forTranslation translation: CGFloat,
-                          maximumHeight: CGFloat,
-                          minimumHeight: CGFloat) -> CGFloat {
-        return 1 - (maximumHeight - translation) / (maximumHeight - minimumHeight)
-    }
-
-    private func alpha(forTranslation translation: CGFloat,
-                       coordinator: OverlayContainerTransitionCoordinator) -> CGFloat {
-        return alpha(
-            forTranslation: translation,
-            maximumHeight: coordinator.height(forNotchAt: OverlayNotch.maximum.rawValue),
-            minimumHeight: coordinator.height(forNotchAt: OverlayNotch.minimum.rawValue)
-        )
-    }
 }
 
 extension BackdropExampleViewController: OverlayContainerViewControllerDelegate {
@@ -96,28 +81,10 @@ extension BackdropExampleViewController: OverlayContainerViewControllerDelegate 
     }
 
     func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                        didDragOverlay overlayViewController: UIViewController,
-                                        toHeight height: CGFloat,
-                                        availableSpace: CGFloat) {
-        backdropViewController.view.alpha = alpha(
-            forTranslation: height,
-            maximumHeight: notchHeight(for: .maximum, availableSpace: availableSpace),
-            minimumHeight: notchHeight(for: .minimum, availableSpace: availableSpace)
-        )
-    }
-
-    func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                        didEndDraggingOverlay overlayViewController: UIViewController,
+                                        willTranslateOverlay overlayViewController: UIViewController,
                                         transitionCoordinator: OverlayContainerTransitionCoordinator) {
-        backdropViewController.view.alpha = alpha(
-            forTranslation: transitionCoordinator.overlayTranslationHeight,
-            coordinator: transitionCoordinator
-        )
-        transitionCoordinator.animate(alongsideTransition: { context in
-            self.backdropViewController.view.alpha = self.alpha(
-                forTranslation: context.targetNotchHeight,
-                coordinator: transitionCoordinator
-            )
+        transitionCoordinator.animate(alongsideTransition: { [weak self] context in
+            self?.backdropViewController.view.alpha = context.translationProgress()
         }, completion: nil)
     }
 }

@@ -1,3 +1,27 @@
+## 3.2.0 (28 October 2019)
+
+- Swift Package Manager support
+
+## 3.1.0 (28 August 2019)
+
+- Support Swift 4.2 & 5
+- Merge PR #34
+- Use cocoapods 1.7 podspec format
+
+## 3.0.0-a (15 June 2019)
+
+- All the translations are now deferred to the next layout pass. The translations can now be scheduled right after the initialization of the container. 
+Furthermore the layout will not break if the container move the overlay or invalidate its notch heights in response to a size change.
+- `SpringOverlayTranslationAnimationController` almost nullifies its damping value when the container has a rigid style to avoid the panel 
+to be lifted above the bottom of the screen when an animated transition occurs.
+- New overlay style `expandableHeight`
+- New delegate tracking API: `willTranslateOverlay`, `didMoveOverlay`, `willMoveOverlay`, `willEndDraggingOverlay`, `willStartDraggingOverlay`
+- `invalidateNotchHeight` use the target notch policy to determine where to go by default
+
+## 2.0.2 (3 May 2019)
+
+- Use Cocoapods 1.6.1
+
 ## 2.0.0 (11 April 2019)
 
 - Add `canReachNotchAt` to disable or enable notches on the fly

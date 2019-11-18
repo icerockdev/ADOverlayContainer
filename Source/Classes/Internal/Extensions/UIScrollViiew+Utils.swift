@@ -14,7 +14,7 @@ extension UIScrollView {
     }
 
     var isContentOriginInBounds: Bool {
-        return contentOffset.y <= -contentInset.top
+        return contentOffset.y <= -oc_adjustedContentInset.top
     }
 
     var isContentInBounds: Bool {
@@ -22,6 +22,20 @@ extension UIScrollView {
     }
 
     func scrollToTop() {
-        contentOffset.y = -contentInset.top
+        contentOffset.y = -oc_adjustedContentInset.top
+    }
+}
+
+
+extension UIScrollView {
+    
+    var oc_adjustedContentInset: UIEdgeInsets {
+        
+        if #available(iOS 11.0, *) {
+            return self.adjustedContentInset
+        } else {
+            // Fallback on earlier versions
+            return self.contentInset
+        }
     }
 }

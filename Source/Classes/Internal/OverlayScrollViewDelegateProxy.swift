@@ -38,8 +38,7 @@ class OverlayScrollViewDelegateProxy: NSObject, UIScrollViewDelegate {
     // MARK: - Public
 
     func cancelForwarding() {
-        scrollViewObservation?.invalidate()
-        scrollView?.delegate = originalDelegate
+        cancelForwarding(restoresDelegate: true)
     }
 
     func forward(to delegate: OverlayScrollViewDelegate, delegateInvocationsFrom scrollView: UIScrollView) {
@@ -51,9 +50,14 @@ class OverlayScrollViewDelegateProxy: NSObject, UIScrollViewDelegate {
         scrollView.delegate = self
         scrollViewObservation = scrollView.observe(\.delegate) { [weak self] (scrollView, delegate) in
             guard !(scrollView.delegate === self) else { return }
-            self?.originalDelegate = scrollView.delegate
-            self?.scrollView = scrollView
-            scrollView.delegate = self
+            if let proxy = scrollView.delegate as? OverlayScrollViewDelegateProxy {
+                proxy.originalDelegate = self?.originalDelegate
+                self?.cancelForwarding(restoresDelegate: false)
+            } else {
+                self?.originalDelegate = scrollView.delegate
+                self?.scrollView = scrollView
+                scrollView.delegate = self
+            }
         }
     }
 
@@ -77,5 +81,16 @@ class OverlayScrollViewDelegateProxy: NSObject, UIScrollViewDelegate {
             withVelocity: velocity,
             targetContentOffset: targetContentOffset
         )
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        delegate?.overlayScrollViewWillBeginDragging(scrollView)
+        originalDelegate?.scrollViewWillBeginDragging?(scrollView)
+    }
+
+    private func cancelForwarding(restoresDelegate: Bool) {
+        scrollViewObservation?.invalidate()
+        guard restoresDelegate else { return }
+        scrollView?.delegate = originalDelegate
     }
 }

@@ -9,6 +9,7 @@
 <p align="center">
   <a href="https://developer.apple.com/"><img alt="Platform" src="https://img.shields.io/badge/platform-iOS-green.svg"/></a>
   <a href="https://developer.apple.com/swift"><img alt="Swift4" src="https://img.shields.io/badge/language-Swift%204.2-orange.svg"/></a>
+  <a href="https://developer.apple.com/swift"><img alt="Swift5" src="https://img.shields.io/badge/language-Swift%205.0-orange.svg"/></a>
   <a href="https://cocoapods.org/pods/OverlayContainer"><img alt="CocoaPods" src="https://img.shields.io/cocoapods/v/OverlayContainer.svg?style=flat"/></a>
   <a href="https://github.com/Carthage/Carthage"><img alt="Carthage" src="https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat"/></a>
   <a href="https://travis-ci.org/applidium/ADOverlayContainer"><img alt="Build Status" src="https://api.travis-ci.org/applidium/ADOverlayContainer.svg?branch=master"/></a>
@@ -30,7 +31,7 @@ There are alternatives like:
 - It perfectly mimics the overlay presented in the Siri Shotcuts app. See [this article](https://gaetanzanella.github.io//2018/replicate-apple-maps-overlay/) for details.
 - It provides more features:
 
-- [x] Unlimited notches 
+- [x] Unlimited notches
 - [x] Notches modifiable at runtime
 - [x] Adaptive to any custom layouts
 - [x] Rubber band effect
@@ -51,8 +52,9 @@ See the provided examples for help or feel free to ask directly.
 - [Installation](#installation)
   - [CocoaPods](#cocoapods)
   - [Carthage](#carthage)
+  - [Swift Package Manager](#swift-package-manager)
 - [Usage](#usage)
-  - [Setup](#mininim-setup)
+  - [Setup](#setup)
   - [Overlay style](#overlay-style)
   - [Scroll view support](#scroll-view-support)
   - [Pan gesture support](#pan-gesture-support)
@@ -60,8 +62,8 @@ See the provided examples for help or feel free to ask directly.
   - [Examples](#examples)
 - [Advanced Usage](#advanced-usage)
   - [Multiple overlays](#multiple-overlays)
-  - [Showing & Hiding the overlay](#show-&-hide-the-overlay)
-  - [Backdrop view](#backdrop-usage)
+  - [Showing & Hiding the overlay](#showing--hiding-the-overlay)
+  - [Backdrop view](#backdrop-view)
   - [Safe Area](#safe-area)
   - [Custom Translation](#custom-translation)
   - [Custom Translation Animations](#custom-translation-animations)
@@ -89,7 +91,21 @@ pod 'OverlayContainer'
 Add the following to your Cartfile:
 
 ```ruby
-github "https://github.com/applidium/ADOverlayContainer"
+github "https://github.com/applidium/OverlayContainer"
+```
+
+### Swift Package Manager
+
+OverlayContainer can be installed as a Swift Package with Xcode 11 or higher. To install it, add a package using Xcode or a dependency to your Package.swift file:
+
+```swift
+.package(url: "https://github.com/applidium/OverlayContainer.git", from: "3.2.0")
+```
+
+Or to track the latest version:
+
+```swift
+.package(url: "https://github.com/applidium/OverlayContainer.git", .branch("master"))
 ```
 
 ## Usage
@@ -116,7 +132,7 @@ containerController.viewControllers = [
 window?.rootViewController = containerController
 ```
 
-Specifing only one view controller is absolutely valid. For instance, in [MapsLikeViewController](https://github.com/applidium/ADOverlayContainer/blob/master/Example/OverlayContainer_Example/Maps/MapsLikeViewController.swift) the overlay only covers partially its content.
+Specifing only one view controller is absolutely valid. For instance, in [MapsLikeViewController](https://github.com/applidium/OverlayContainer/blob/master/Example/OverlayContainer_Example/Maps/MapsLikeViewController.swift) the overlay only covers partially its content.
 
 The overlay container view controller needs at least one notch. Implement `OverlayContainerViewControllerDelegate` to specify the number of notches wished:
 
@@ -151,6 +167,7 @@ The overlay style defines how the overlay view controller will be constrained in
 enum OverlayStyle {
     case flexibleHeight // default
     case rigid
+    case expandableHeight
 }
 
 let overlayContainer = OverlayContainerViewController(style: .rigid)
@@ -164,13 +181,19 @@ The overlay view controller will be constrained with a height equal to the highe
 
 * flexibleHeight
 
-![flexibleHeight](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/flexibleHeight.gif)
+![flexible](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/flexible.gif)
 
 The overlay view controller will not be height-constrained. It will grow and shrink as the user drags it up and down.
 
 Note though that while the user is dragging the overlay, the overlay's view may perform some extra layout computations. This is specially true for the table views or the collection views : some cells may be dequeued or removed when its frame changes. Try `.rigid` if you encounter performance issues.
 
 **Be careful to always provide a minimum height higher than the intrinsic content of your overlay.**
+
+* expandableHeight
+
+![expandable](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/expandable.gif)
+
+The overlay view controller will be constrained with a height greater or equal to the highest notch. Its height will be expanded if the overlay goes beyond the highest notch (it could happen if the translation function or the animation controller allow it).
 
 ### Scroll view support
 
@@ -196,7 +219,7 @@ containerController.drivingScrollView = myScrollView
 
 ### Pan gesture support
 
-The container view controller detects pan gestures on its own view. 
+The container view controller detects pan gestures on its own view.
 Use the dedicated delegate method to check that the specified starting pan gesture location corresponds to a grabbable view in your custom overlay.
 
 ```swift
@@ -214,33 +237,69 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 
 ### Tracking the overlay
 
-You can track the overlay motions using the dedicated delegate methods.
+You can track the overlay motions using the dedicated delegate methods:
 
-`didDragOverlay` is called each time the overlay is dragged by the user to the specified height.
+- Translation Start
+
+Tells the delegate when the user is about to start dragging the overlay view controller.
 
 ```swift
 func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                    didDragOverlay overlayViewController: UIViewController,
-                                    toHeight height: CGFloat,
-                                    availableSpace: CGFloat)
+                                    willStartDraggingOverlay overlayViewController: UIViewController)
 ```
 
-`didEndDraggingOverlay` is called when the user has finished dragging the overlay. The container is about to move the overlay to the specified notch.
+- Translation End
+
+Tells the delegate when the user finishs dragging the overlay view controller with the specified velocity.
 
 ```swift
 func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                    didEndDraggingOverlay overlayViewController: UIViewController,
+                                    willEndDraggingOverlay overlayViewController: UIViewController,
+                                    atVelocity velocity: CGPoint)
+```
+
+- Translation In Progress
+
+Tells the delegate when the container is about to move the overlay view controller to the specified notch.
+
+In some cases, the overlay view controller may not successfully reach the specified notch.
+If the user cancels the translation for instance. Use `overlayContainerViewController(_:didMove:toNotchAt:)` if you need to be notified each time the translation succeeds.
+
+```swift
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    willMoveOverlay overlayViewController: UIViewController,
+                                    toNotchAt index: Int)
+```
+
+Tells the delegate when the container has moved the overlay view controller to the specified notch.
+
+```swift
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    didMoveOverlay overlayViewController: UIViewController,
+                                    toNotchAt index: Int)
+```
+
+Tells the delegate whenever the overlay view controller is about to be translated.
+
+The delegate typically implements this method to coordinate changes alongside the overlay view controller's translation.
+
+```swift
+func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
+                                    willTranslateOverlay overlayViewController: UIViewController,
                                     transitionCoordinator: OverlayContainerTransitionCoordinator)
 ```
 
-The `transition coordinator` provides information about the animation that is about to start:
+The `transition coordinator` provides information about the translation that is about to start:
 
 ```swift
-/// The notch's index the container expects to reach.
-var targetNotchIndex: Int { get }
+/// A Boolean value indicating whether the transition is explicitly animated.
+var isAnimated: Bool { get }
 
-/// The notch's height the container expects to reach.
-var targetNotchHeight: CGFloat { get }
+/// A Boolean value indicating whether the transition was cancelled.
+var isCancelled: Bool { get }
+
+/// The height the container expects to reach.
+var targetTranslationHeight: CGFloat { get }
 
 /// The current translation height.
 var overlayTranslationHeight: CGFloat { get }
@@ -248,11 +307,18 @@ var overlayTranslationHeight: CGFloat { get }
 /// The notch indexes.
 var notchIndexes: Range<Int> { get }
 
-/// The reachables indexes.
+/// The reachable indexes ie the indexes not disabled by the `canReachNotchAt` delegate's method.
 var reachableIndexes: [Int] { get }
 
 /// Returns the height of the specified notch.
 func height(forNotchAt index: Int) -> CGFloat
+```
+and allows you to add animations alongside it:
+
+```swift
+transitionCoordinator.animate(alongsideTransition: { context in
+    // ...
+}, completion: nil)
 ```
 
 ### Examples
@@ -343,24 +409,16 @@ Make sure to use the `rigid` overlay style if the content can not be flattened.
 
 ### Backdrop view
 
-Coordinate the overlay movements to the aspect of a view using the dedicated delegate methods. See the [backdrop view example](https://github.com/applidium/ADOverlayContainer/blob/master/Example/OverlayContainer/BackdropExampleViewController.swift).
+Coordinate the overlay movements to the aspect of a view using the dedicated delegate methods. See the [backdrop view example](https://github.com/applidium/OverlayContainer/blob/master/Example/OverlayContainer_Example/Backdrop/BackdropExampleViewController.swift).
 
 ![backdrop](https://github.com/applidium/ADOverlayContainer/blob/master/Assets/backdropView.gif)
 
 ```swift
 func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                    didDragOverlay overlayViewController: UIViewController,
-                                    toHeight height: CGFloat,
-                                    availableSpace: CGFloat) {
-    backdropView.alpha = // compute alpha based on height
-}
-
-func overlayContainerViewController(_ containerViewController: OverlayContainerViewController,
-                                    didEndDraggingOverlay overlayViewController: UIViewController,
+                                    willTranslateOverlay overlayViewController: UIViewController,
                                     transitionCoordinator: OverlayContainerTransitionCoordinator) {
-    backdropView.alpha = // compute alpha based on the transitionCoordinator
-    transitionCoordinator.animate(alongsideTransition: { context in
-        self.backdropView.alpha =  // compute the final alpha value on the transitionCoordinator
+    transitionCoordinator.animate(alongsideTransition: { [weak self] context in
+        self?.backdropViewController.view.alpha = context.translationProgress()
     }, completion: nil)
 }
 ```
@@ -408,7 +466,7 @@ func overlayContainerViewController(_ containerViewController: OverlayContainerV
 
 Adopt `OverlayTranslationTargetNotchPolicy` & `OverlayAnimatedTransitioning` protocols to define where the overlay should go once the user's touch is released and how to animate the translation.
 
-By default, the overlay container uses a `SpringOverlayTranslationAnimationController` that mimics the behavior of a spring. 
+By default, the overlay container uses a `SpringOverlayTranslationAnimationController` that mimics the behavior of a spring.
 The associated target notch policy `RushingForwardTargetNotchPolicy` will always try to go forward if the user's finger reachs a certain velocity. It might also decide to skip some notches if the user goes too fast.
 
 Tweak the provided implementations or implement our own objects to modify the overlay translation behavior.
@@ -438,11 +496,12 @@ You can reload all the data that is used to construct the notches using the dedi
 func invalidateNotchHeights()
 ```
 
-This method does not reload the notch heights immediately. It only clears the current container's state. Call `moveOverlay(toNotchAt:animated:)` to perform the change immediately or to move the overlay to a correct notch if the number of notches has changed.
+This method does not reload the notch heights immediately. It only clears the current container's state. Because the number of notches may change, the container will use its target notch policy to determine where to go.
+Call `moveOverlay(toNotchAt:animated:)` to override this behavior.
 
 ## Author
 
-gaetanzanella, gaetan.zanella@fabernovel.com
+[@gaetanzanella](https://twitter.com/gaetanzanella), gaetan.zanella@fabernovel.com
 
 ## License
 

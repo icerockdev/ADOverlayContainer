@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import CoreGraphics
 
 extension CGFloat {
-    func oc_rounded(_ rule: FloatingPointRoundingRule = .down, toDecimals decimals: Int = 2) -> CGFloat {
-        let multiplier = CGFloat(10 ^ decimals)
-        return (self * multiplier).rounded(.down) / multiplier
+    func oc_rounded(toDecimals decimals: Int = 2) -> CGFloat {
+        let multiplier = CGFloat(pow(Double(10), Double(decimals)))
+        return (self * multiplier).rounded() / multiplier
     }
 }
